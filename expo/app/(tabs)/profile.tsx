@@ -6,6 +6,9 @@ import {
   ScrollView,
   TouchableOpacity,
   Switch,
+  Linking,
+  Alert,
+  Platform,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { router } from 'expo-router';
@@ -24,6 +27,7 @@ import {
   Clock,
   Check,
   AlertCircle,
+  Trash2,
 } from 'lucide-react-native';
 import { useProviderContext } from '@/context/ProviderContext';
 
@@ -216,6 +220,60 @@ export default function ProfileScreen() {
         <TouchableOpacity style={styles.logoutButton}>
           <LogOut size={20} color="#EF4444" />
           <Text style={styles.logoutText}>Log Out</Text>
+        </TouchableOpacity>
+
+        {/* Delete Account */}
+        <TouchableOpacity
+          testID="delete-account-link"
+          style={styles.deleteAccountButton}
+          onPress={() => {
+            const subject = encodeURIComponent('Account & Data Deletion Request');
+            const body = encodeURIComponent(
+              `Hello,\n\nI would like to request the permanent deletion of my account and all associated data.\n\nAccount email: ${user.email}\nName: ${user.name}\n\nThank you.`
+            );
+            const mailto = `mailto:privacy@jumpstartsxm.com?subject=${subject}&body=${body}`;
+            const handleOpen = async () => {
+              try {
+                if (Platform.OS === 'web') {
+                  window.open(mailto, '_blank');
+                  return;
+                }
+                const supported = await Linking.canOpenURL(mailto);
+                if (supported) {
+                  await Linking.openURL(mailto);
+                } else {
+                  Alert.alert(
+                    'Email not available',
+                    'Please email privacy@jumpstartsxm.com to request account deletion.'
+                  );
+                }
+              } catch (e) {
+                console.log('delete account link error', e);
+                Alert.alert(
+                  'Could not open email',
+                  'Please email privacy@jumpstartsxm.com to request account deletion.'
+                );
+              }
+            };
+            if (Platform.OS === 'web') {
+              const ok = window.confirm(
+                'Request account deletion? This will open your email app to send a request to privacy@jumpstartsxm.com.'
+              );
+              if (ok) void handleOpen();
+              return;
+            }
+            Alert.alert(
+              'Request Account Deletion',
+              'This will open your email app to send a deletion request to privacy@jumpstartsxm.com. Your account and associated data will be permanently removed within 30 days.',
+              [
+                { text: 'Cancel', style: 'cancel' },
+                { text: 'Continue', style: 'destructive', onPress: () => void handleOpen() },
+              ]
+            );
+          }}
+        >
+          <Trash2 size={18} color="#64748B" />
+          <Text style={styles.deleteAccountText}>Request Account & Data Deletion</Text>
         </TouchableOpacity>
 
         {/* Version */}
@@ -434,6 +492,24 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#DC2626',
+  },
+  deleteAccountButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginHorizontal: 16,
+    marginTop: 12,
+    paddingVertical: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    backgroundColor: '#fff',
+  },
+  deleteAccountText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#475569',
   },
   version: {
     textAlign: 'center',
