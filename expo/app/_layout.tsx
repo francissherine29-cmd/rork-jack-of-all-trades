@@ -21,6 +21,7 @@ function RootLayoutNav() {
       <Stack.Screen name="modal" options={{ presentation: "modal" }} />
       <Stack.Screen name="provider-register" options={{ headerShown: false }} />
       <Stack.Screen name="admin-providers" options={{ headerShown: false }} />
+      <Stack.Screen name="privacy" options={{ title: "Privacy Policy" }} />
     </Stack>
   );
 }
