@@ -5,6 +5,11 @@
       "name": "Jack of all Trades",
       "path": "expo",
       "framework": "react-native"
+    },
+    {
+      "name": "Jack of all Trades",
+      "path": "android-jack-of-all-trades",
+      "framework": "kotlin"
     }
   ]
 }
