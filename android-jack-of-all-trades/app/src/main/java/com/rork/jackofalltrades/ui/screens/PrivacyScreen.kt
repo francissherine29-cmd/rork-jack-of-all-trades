@@ -20,6 +20,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.AlternateEmail
+import androidx.compose.material.icons.outlined.Language
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -137,6 +138,44 @@ fun PrivacyScreen(navController: NavController) {
                     Spacer(Modifier.width(12.dp))
                     Text(
                         "Request Account & Data Deletion",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Cyan,
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(12.dp))
+
+            // View policy online
+            Card(
+                onClick = {
+                    runCatching {
+                        context.startActivity(
+                            Intent(Intent.ACTION_VIEW, Uri.parse("https://jack-of-all-trades.rork.app"))
+                        )
+                    }.onFailure {
+                        android.widget.Toast.makeText(
+                            context,
+                            "Visit jack-of-all-trades.rork.app",
+                            android.widget.Toast.LENGTH_LONG,
+                        ).show()
+                    }
+                },
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFFE0F7FA)),
+                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(16.dp)
+                ) {
+                    Icon(Icons.Outlined.Language, contentDescription = null, tint = Cyan, modifier = Modifier.size(20.dp))
+                    Spacer(Modifier.width(12.dp))
+                    Text(
+                        "View Privacy Policy Online",
                         fontSize = 14.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = Cyan,
