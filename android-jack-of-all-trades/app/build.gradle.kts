@@ -10,7 +10,7 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.Jackofalltrade.jot"
+        applicationId = "com.jackofalltrade.jot2"
         minSdk = 24
         targetSdk = 36
         versionCode = 1
