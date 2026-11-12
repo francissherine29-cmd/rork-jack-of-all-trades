@@ -10,6 +10,10 @@ type NetworkContextType = {
 };
 
 async function checkInternetReachability(): Promise<boolean> {
+  if (Platform.OS === 'web' && typeof navigator !== 'undefined') {
+    return navigator.onLine;
+  }
+
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 5000);
