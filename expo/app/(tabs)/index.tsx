@@ -1,10 +1,12 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import {
   StyleSheet,
   Text,
   View,
   ScrollView,
   TouchableOpacity,
+  TextInput,
+  Keyboard,
   Animated,
   Dimensions,
 } from 'react-native';
@@ -30,8 +32,13 @@ import {
   GraduationCap,
   Scissors,
   Waves,
+  Flower2,
+  X,
+  ChevronRight,
+  SearchX,
   WifiOff as WifiOffIcon,
 } from 'lucide-react-native';
+import { searchCategories, searchProviders } from '@/constants/search';
 import { SERVICE_CATEGORIES, SXM_AREAS, ARRIVAL_TIMES } from '@/constants/services';
 import { MOCK_PROVIDERS } from '@/constants/mock-providers';
 import { useNetwork } from '@/context/NetworkContext';
@@ -54,13 +61,21 @@ const ICONS: Record<string, React.ElementType> = {
   GraduationCap,
   Scissors,
   Waves,
+  Flower2,
 };
+
+const SUGGESTIONS = ['Massage', 'Plumber', 'Taxi', 'Nails', 'Mechanic', 'Cleaning'];
 
 export default function HomeScreen() {
   const [selectedArea, setSelectedArea] = useState<string>('');
   const [selectedTime, setSelectedTime] = useState<string>('');
   const [scrollY] = useState(new Animated.Value(0));
+  const [query, setQuery] = useState<string>('');
   const { isOnline } = useNetwork();
+
+  const isSearching = query.trim().length > 0;
+  const categoryResults = useMemo(() => searchCategories(query), [query]);
+  const providerResults = useMemo(() => searchProviders(query), [query]);
 
   const headerOpacity = scrollY.interpolate({
     inputRange: [0, 100],
@@ -92,6 +107,7 @@ export default function HomeScreen() {
 
       <Animated.ScrollView
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
         onScroll={Animated.event(
           [{ nativeEvent: { contentOffset: { y: scrollY } } }],
           { useNativeDriver: true }
@@ -118,15 +134,115 @@ export default function HomeScreen() {
           </View>
           
           {/* Search Bar */}
-          <TouchableOpacity 
-            style={styles.searchBar}
-            onPress={() => router.push('/' as never)}
-          >
+          <View style={styles.searchBar}>
             <Search size={20} color="#64748B" />
-            <Text style={styles.searchText}>What service do you need?</Text>
-          </TouchableOpacity>
+            <TextInput
+              style={styles.searchInput}
+              value={query}
+              onChangeText={setQuery}
+              placeholder="What service do you need?"
+              placeholderTextColor="#94A3B8"
+              returnKeyType="search"
+              autoCorrect={false}
+              autoCapitalize="none"
+              onSubmitEditing={() => Keyboard.dismiss()}
+              testID="home-search-input"
+            />
+            {isSearching && (
+              <TouchableOpacity
+                onPress={() => setQuery('')}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                testID="home-search-clear"
+              >
+                <X size={18} color="#64748B" />
+              </TouchableOpacity>
+            )}
+          </View>
+
+          {!isSearching && (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.suggestionsRow}
+              keyboardShouldPersistTaps="handled"
+            >
+              {SUGGESTIONS.map((s) => (
+                <TouchableOpacity key={s} style={styles.suggestionChip} onPress={() => setQuery(s)}>
+                  <Text style={styles.suggestionText}>{s}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          )}
         </View>
 
+        {isSearching ? (
+          <View style={styles.resultsSection}>
+            {categoryResults.length === 0 && providerResults.length === 0 ? (
+              <View style={styles.emptyState}>
+                <SearchX size={40} color="#94A3B8" />
+                <Text style={styles.emptyTitle}>No results for “{query.trim()}”</Text>
+                <Text style={styles.emptyText}>Try another word, like “massage”, “plumber” or “taxi”.</Text>
+              </View>
+            ) : (
+              <>
+                {categoryResults.length > 0 && (
+                  <>
+                    <Text style={styles.resultsHeading}>Services</Text>
+                    {categoryResults.map((c) => {
+                      const IconComponent = ICONS[c.icon];
+                      return (
+                        <TouchableOpacity
+                          key={c.id}
+                          style={styles.resultRow}
+                          onPress={() => handleCategoryPress(c.id)}
+                        >
+                          <View style={[styles.resultIcon, { backgroundColor: c.bgGradient[0] }]}>
+                            {IconComponent && <IconComponent size={20} color={c.color} />}
+                          </View>
+                          <View style={styles.resultInfo}>
+                            <Text style={styles.resultTitle}>{c.name}</Text>
+                            <Text style={styles.resultSubtitle} numberOfLines={1}>{c.description}</Text>
+                          </View>
+                          <ChevronRight size={18} color="#CBD5E1" />
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </>
+                )}
+                {providerResults.length > 0 && (
+                  <>
+                    <Text style={styles.resultsHeading}>Providers</Text>
+                    {providerResults.map((p) => {
+                      const cat = SERVICE_CATEGORIES.find((c) => c.id === p.category);
+                      return (
+                        <TouchableOpacity
+                          key={p.id}
+                          style={styles.resultRow}
+                          onPress={() => router.push({ pathname: '/provider/[id]', params: { id: p.id } })}
+                        >
+                          <View style={[styles.resultIcon, { backgroundColor: cat?.bgGradient[0] ?? '#E0F2FE' }]}>
+                            <Text style={[styles.resultInitial, { color: cat?.color ?? '#0891B2' }]}>{p.name[0]}</Text>
+                          </View>
+                          <View style={styles.resultInfo}>
+                            <Text style={styles.resultTitle}>{p.name}</Text>
+                            <View style={styles.ratingContainer}>
+                              <Star size={12} color="#F59E0B" fill="#F59E0B" />
+                              <Text style={styles.resultSubtitle}>
+                                {p.rating} · {cat?.name ?? ''} · {p.priceRange}
+                              </Text>
+                            </View>
+                          </View>
+                          <ChevronRight size={18} color="#CBD5E1" />
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </>
+                )}
+              </>
+            )}
+          </View>
+        ) : (
+        <>
         {/* Filters Section */}
         <View style={styles.filtersSection}>
           {/* Area Selector */}
@@ -275,6 +391,8 @@ export default function HomeScreen() {
             ))}
           </ScrollView>
         </View>
+        </>
+        )}
 
         {/* Bottom Spacing */}
         <View style={styles.bottomSpacing} />
@@ -361,10 +479,90 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 4,
   },
-  searchText: {
+  searchInput: {
+    flex: 1,
     fontSize: 15,
-    color: '#94A3B8',
+    color: '#0F172A',
     fontWeight: '500',
+    padding: 0,
+  },
+  suggestionsRow: {
+    gap: 8,
+    paddingTop: 12,
+  },
+  suggestionChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  suggestionText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#fff',
+  },
+  resultsSection: {
+    padding: 16,
+  },
+  resultsHeading: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#64748B',
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+    marginTop: 8,
+    marginBottom: 10,
+  },
+  resultRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: '#fff',
+    borderRadius: 14,
+    padding: 12,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+  },
+  resultIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  resultInitial: {
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  resultInfo: {
+    flex: 1,
+    gap: 2,
+  },
+  resultTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#0F172A',
+  },
+  resultSubtitle: {
+    fontSize: 12,
+    color: '#64748B',
+  },
+  emptyState: {
+    alignItems: 'center',
+    paddingVertical: 48,
+    gap: 8,
+  },
+  emptyTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#0F172A',
+    textAlign: 'center',
+  },
+  emptyText: {
+    fontSize: 14,
+    color: '#64748B',
+    textAlign: 'center',
   },
   filtersSection: {
     backgroundColor: '#fff',

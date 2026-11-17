@@ -420,6 +420,37 @@ export const MOCK_PROVIDERS: ServiceProvider[] = [
     isAvailable: true,
     eta: '2 hours',
   },
+  // Self Care
+  {
+    id: '27',
+    name: 'Island Bliss Spa',
+    category: 'self-care',
+    rating: 4.9,
+    reviews: 168,
+    priceRange: '$$',
+    areas: ['simpson-bay', 'maho', 'cupecoy', 'philipsburg'],
+    responseTime: '30 min',
+    image: 'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=200&h=200&fit=crop',
+    description: 'Relaxing massages, manicures, and pedicures. Visit our studio or book an in-villa session.',
+    phone: '+1-721-555-0127',
+    isAvailable: true,
+    eta: '45 min',
+  },
+  {
+    id: '28',
+    name: 'Polished Nail Bar',
+    category: 'self-care',
+    rating: 4.7,
+    reviews: 121,
+    priceRange: '$',
+    areas: ['cole-bay', 'cay-hill', 'marigot', 'grand-case'],
+    responseTime: '20 min',
+    image: 'https://images.unsplash.com/photo-1604654894610-df63bc536371?w=200&h=200&fit=crop',
+    description: 'Manicures, pedicures, gel and acrylic nails. Walk-ins welcome, mobile service available.',
+    phone: '+1-721-555-0128',
+    isAvailable: true,
+    eta: '30 min',
+  },
 ];
 
 export const getProvidersByCategory = (categoryId: string): ServiceProvider[] => {

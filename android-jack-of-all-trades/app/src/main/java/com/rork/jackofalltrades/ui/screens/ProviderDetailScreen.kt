@@ -36,7 +36,11 @@ import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material.icons.outlined.Verified
 import androidx.compose.material.icons.outlined.WorkspacePremium
 import androidx.compose.material.icons.outlined.EventAvailable
+import androidx.compose.material.icons.outlined.Chat
+import androidx.compose.material.icons.outlined.Sms
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -72,6 +76,7 @@ fun ProviderDetailScreen(providerId: String, navController: NavController) {
     val category = provider?.let { MockData.categoryById(it.category) }
     val context = LocalContext.current
     var isFavorite by remember { mutableStateOf(false) }
+    var showMessageOptions by remember { mutableStateOf(false) }
 
     if (provider == null || category == null) {
         Box(Modifier.fillMaxSize()) { Text("Provider not found", Modifier.padding(16.dp)) }
@@ -246,9 +251,7 @@ fun ProviderDetailScreen(providerId: String, navController: NavController) {
                         .padding(horizontal = 16.dp, vertical = 24.dp)
                 ) {
                     OutlinedButton(
-                        onClick = {
-                            Toast.makeText(context, "Messaging coming soon", Toast.LENGTH_SHORT).show()
-                        },
+                        onClick = { showMessageOptions = true },
                         shape = RoundedCornerShape(12.dp),
                         modifier = Modifier.weight(1f),
                     ) {
@@ -307,6 +310,68 @@ fun ProviderDetailScreen(providerId: String, navController: NavController) {
             }
         }
     }
+
+    if (showMessageOptions) {
+        val greeting = "Hi ${provider.name}, I found you on Jack of all Trades and I'm interested in your ${category.name.lowercase()} service."
+        AlertDialog(
+            onDismissRequest = { showMessageOptions = false },
+            title = { Text("Message ${provider.name}") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text("How would you like to send your message?", color = TextMuted, fontSize = 14.sp)
+                    MessageOption(Icons.Outlined.Chat, "WhatsApp", Color(0xFF25D366)) {
+                        showMessageOptions = false
+                        openWhatsApp(context, greeting)
+                    }
+                    MessageOption(Icons.Outlined.Sms, "Text message (SMS)", accent) {
+                        showMessageOptions = false
+                        openSms(context, greeting)
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                TextButton(onClick = { showMessageOptions = false }) { Text("Cancel") }
+            },
+            containerColor = Color.White,
+        )
+    }
+}
+
+@Composable
+private fun MessageOption(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String,
+    tint: Color,
+    onClick: () -> Unit,
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(tint.copy(alpha = 0.08f), RoundedCornerShape(12.dp))
+            .border(1.dp, tint.copy(alpha = 0.25f), RoundedCornerShape(12.dp))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 14.dp, vertical = 14.dp)
+    ) {
+        Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(22.dp))
+        Spacer(Modifier.width(12.dp))
+        Text(label, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = TextDark)
+    }
+}
+
+private fun openWhatsApp(context: android.content.Context, text: String) {
+    // wa.me opens WhatsApp when installed, otherwise WhatsApp's web page.
+    val uri = Uri.parse("https://wa.me/${MockData.MESSAGE_NUMBER}?text=${Uri.encode(text)}")
+    runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, uri)) }
+        .onFailure { Toast.makeText(context, "Couldn't open WhatsApp", Toast.LENGTH_SHORT).show() }
+}
+
+private fun openSms(context: android.content.Context, text: String) {
+    val intent = Intent(Intent.ACTION_SENDTO, Uri.parse("smsto:+${MockData.MESSAGE_NUMBER}"))
+        .putExtra("sms_body", text)
+    runCatching { context.startActivity(intent) }
+        .onFailure { Toast.makeText(context, "No messaging app found", Toast.LENGTH_SHORT).show() }
 }
 
 @Composable

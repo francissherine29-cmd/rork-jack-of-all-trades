@@ -25,6 +25,12 @@ import {
   Sparkles,
   Truck,
   Hammer,
+  CarFront,
+  Settings,
+  GraduationCap,
+  Scissors,
+  Waves,
+  Flower2,
 } from 'lucide-react-native';
 import { SERVICE_CATEGORIES, SXM_AREAS, ARRIVAL_TIMES } from '@/constants/services';
 import { MOCK_PROVIDERS, ServiceProvider } from '@/constants/mock-providers';
@@ -41,6 +47,12 @@ const ICONS: Record<string, React.ElementType> = {
   Sparkles,
   Truck,
   Hammer,
+  CarFront,
+  Settings,
+  GraduationCap,
+  Scissors,
+  Waves,
+  Flower2,
 };
 
 export default function ServiceCategoryScreen() {

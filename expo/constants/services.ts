@@ -130,7 +130,18 @@ export const SERVICE_CATEGORIES: ServiceCategory[] = [
     color: '#0284C7',
     bgGradient: ['#E0F2FE', '#0284C7'],
   },
+  {
+    id: 'self-care',
+    name: 'Self Care',
+    description: 'Manicure, pedicure, massage',
+    icon: 'Flower2',
+    color: '#E11D48',
+    bgGradient: ['#FFE4E6', '#E11D48'],
+  },
 ];
+
+/** Number every "Message" button goes to while testing (+1 721 588-9667). */
+export const MESSAGE_NUMBER = '17215889667';
 
 export const SXM_AREAS = [
   { id: 'philipsburg', name: 'Philipsburg', zone: 'Dutch Side' },

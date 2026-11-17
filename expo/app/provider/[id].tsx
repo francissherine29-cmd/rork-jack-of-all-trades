@@ -5,6 +5,9 @@ import {
   View,
   ScrollView,
   TouchableOpacity,
+  Alert,
+  Linking,
+  Platform,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import {
@@ -21,8 +24,31 @@ import {
   Calendar,
 } from 'lucide-react-native';
 import { MOCK_PROVIDERS } from '@/constants/mock-providers';
-import { SERVICE_CATEGORIES } from '@/constants/services';
+import { SERVICE_CATEGORIES, MESSAGE_NUMBER } from '@/constants/services';
 import { useState } from 'react';
+
+const openUrl = async (url: string, fallbackMessage: string) => {
+  try {
+    await Linking.openURL(url);
+  } catch (e) {
+    console.log('[Contact] failed to open', url, e);
+    Alert.alert('Unable to open', fallbackMessage);
+  }
+};
+
+const openWhatsApp = (text: string) =>
+  openUrl(
+    `https://wa.me/${MESSAGE_NUMBER}?text=${encodeURIComponent(text)}`,
+    'WhatsApp could not be opened on this device.',
+  );
+
+const openSms = (text: string) => {
+  const separator = Platform.OS === 'ios' ? '&' : '?';
+  return openUrl(
+    `sms:+${MESSAGE_NUMBER}${separator}body=${encodeURIComponent(text)}`,
+    'Messaging is not available on this device.',
+  );
+};
 
 export default function ProviderDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -40,6 +66,23 @@ export default function ProviderDetailScreen() {
       </View>
     );
   }
+
+  const handleMessage = () => {
+    const greeting = `Hi ${provider.name}, I found you on Jack of all Trades and I'm interested in your ${category.name} service.`;
+    if (Platform.OS === 'web') {
+      void openWhatsApp(greeting);
+      return;
+    }
+    Alert.alert('Message ' + provider.name, 'How would you like to send your message?', [
+      { text: 'WhatsApp', onPress: () => void openWhatsApp(greeting) },
+      { text: 'Text message (SMS)', onPress: () => void openSms(greeting) },
+      { text: 'Cancel', style: 'cancel' },
+    ]);
+  };
+
+  const handleCall = () => {
+    void openUrl(`tel:${provider.phone.replace(/[^\d+]/g, '')}`, 'Calling is not available on this device.');
+  };
 
   return (
     <View style={styles.container}>
@@ -173,11 +216,19 @@ export default function ProviderDetailScreen() {
 
         {/* Contact Buttons */}
         <View style={styles.contactSection}>
-          <TouchableOpacity style={[styles.contactButton, styles.messageButton]}>
+          <TouchableOpacity
+            style={[styles.contactButton, styles.messageButton]}
+            onPress={handleMessage}
+            testID="provider-message-button"
+          >
             <MessageCircle size={20} color="#0891B2" />
             <Text style={styles.messageButtonText}>Message</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.contactButton, styles.callButton, { backgroundColor: category.color }]}>
+          <TouchableOpacity
+            style={[styles.contactButton, styles.callButton, { backgroundColor: category.color }]}
+            onPress={handleCall}
+            testID="provider-call-button"
+          >
             <Phone size={20} color="#fff" />
             <Text style={styles.callButtonText}>Call</Text>
           </TouchableOpacity>

@@ -16,6 +16,7 @@ import androidx.compose.material.icons.outlined.Pool
 import androidx.compose.material.icons.outlined.Restaurant
 import androidx.compose.material.icons.outlined.School
 import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.outlined.Spa
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 
@@ -36,6 +37,7 @@ fun iconFor(key: String): ImageVector = when (key) {
     "school" -> Icons.Outlined.School
     "cut" -> Icons.Outlined.ContentCut
     "pool" -> Icons.Outlined.Pool
+    "spa" -> Icons.Outlined.Spa
     else -> Icons.Outlined.Home
 }
 

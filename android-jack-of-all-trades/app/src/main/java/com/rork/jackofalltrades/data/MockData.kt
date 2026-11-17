@@ -3,6 +3,9 @@ package com.rork.jackofalltrades.data
 /** Static catalog data for St. Maarten services. */
 object MockData {
 
+    /** Number every "Message" button goes to while testing (+1 721 588-9667). */
+    const val MESSAGE_NUMBER = "17215889667"
+
     val categories = listOf(
         ServiceCategory("landscaping", "Landscaping", "Lawn care, gardening, tree trimming", "park", "#22C55E", "#DCFCE7"),
         ServiceCategory("taxi", "Taxi & Transport", "Airport transfers, island tours, rides", "car", "#3B82F6", "#DBEAFE"),
@@ -19,7 +22,49 @@ object MockData {
         ServiceCategory("tutoring", "Tutoring", "Academic tutoring, test prep, lessons", "school", "#7C3AED", "#EDE9FE"),
         ServiceCategory("haircare", "Hair Care", "Haircuts, styling, braids, treatments", "cut", "#DB2777", "#FCE7F3"),
         ServiceCategory("pool-service", "Pool Service", "Pool cleaning, maintenance, repairs", "pool", "#0284C7", "#E0F2FE"),
+        ServiceCategory("self-care", "Self Care", "Manicure, pedicure, massage", "spa", "#E11D48", "#FFE4E6"),
     )
+
+    /** Extra everyday words people type, so search finds the right service. */
+    private val categoryKeywords = mapOf(
+        "landscaping" to "lawn grass garden gardener yard tree trim mow plants",
+        "taxi" to "taxi cab ride driver airport transfer tour transport",
+        "babysitting" to "babysitter nanny child kids childcare sitter",
+        "food-delivery" to "food meal restaurant delivery eat lunch dinner takeout",
+        "home-repair" to "plumber plumbing electrician electrical handyman fix leak carpenter ac",
+        "cleaning" to "clean cleaner maid housekeeping deep clean laundry",
+        "pet-care" to "dog cat pet walk walker groom grooming sitter vet",
+        "moving" to "move mover moving hauling furniture truck delivery",
+        "construction" to "builder build renovation paint painter tile roof contractor",
+        "property" to "villa property management caretaker housekeeping",
+        "car-rental" to "car rent rental vehicle suv jeep scooter hire",
+        "mechanic" to "mechanic car repair garage tire tyre oil brakes battery tow towing engine",
+        "tutoring" to "tutor teacher lesson homework math english school exam",
+        "haircare" to "hair haircut barber salon braids stylist fade beard",
+        "pool-service" to "pool swimming clean chlorine filter",
+        "self-care" to "self care manicure pedicure massage nails nail spa facial wax waxing relax beauty",
+    )
+
+    /** Categories whose name, description or keywords match the typed text. */
+    fun searchCategories(query: String): List<ServiceCategory> {
+        val words = query.lowercase().split(" ").filter { it.isNotBlank() }
+        if (words.isEmpty()) return emptyList()
+        return categories.filter { c ->
+            val haystack = "${c.name} ${c.description} ${categoryKeywords[c.id].orEmpty()}".lowercase()
+            words.all { haystack.contains(it) }
+        }
+    }
+
+    /** Providers matching the typed text, or belonging to a matching service. */
+    fun searchProviders(query: String): List<ServiceProvider> {
+        val words = query.lowercase().split(" ").filter { it.isNotBlank() }
+        if (words.isEmpty()) return emptyList()
+        val matchedCategories = searchCategories(query).map { it.id }.toSet()
+        return providers.filter { p ->
+            val haystack = "${p.name} ${p.description} ${categoryById(p.category)?.name.orEmpty()}".lowercase()
+            p.category in matchedCategories || words.all { haystack.contains(it) }
+        }.sortedByDescending { it.rating }
+    }
 
     val areas = listOf(
         SxmArea("philipsburg", "Philipsburg", "Dutch Side"),
@@ -173,6 +218,15 @@ object MockData {
             listOf("cole-bay", "cay-hill", "grand-case", "cul-de-sac"), "2 hours",
             "Complete pool services for villas and resorts. Weekly maintenance plans and emergency repairs available.",
             "+1-721-555-0126", true, "2 hours"),
+        // Self Care
+        ServiceProvider("27", "Island Bliss Spa", "self-care", 4.9, 168, "$$",
+            listOf("simpson-bay", "maho", "cupecoy", "philipsburg"), "30 min",
+            "Relaxing massages, manicures, and pedicures. Visit our studio or book an in-villa session.",
+            "+1-721-555-0127", true, "45 min"),
+        ServiceProvider("28", "Polished Nail Bar", "self-care", 4.7, 121, "$",
+            listOf("cole-bay", "cay-hill", "marigot", "grand-case"), "20 min",
+            "Manicures, pedicures, gel and acrylic nails. Walk-ins welcome, mobile service available.",
+            "+1-721-555-0128", true, "30 min"),
     )
 
     val defaultBookings = listOf(

@@ -21,7 +21,13 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
+import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Schedule
+import androidx.compose.material.icons.outlined.SearchOff
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material.icons.outlined.WifiOff
@@ -39,6 +45,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -61,6 +72,7 @@ fun HomeScreen(navController: NavController) {
     val isOnline by NetworkMonitor.isOnline.collectAsStateWithLifecycle()
     var selectedArea by remember { mutableStateOf("") }
     var selectedTime by remember { mutableStateOf("") }
+    var query by remember { mutableStateOf("") }
 
     Column(
         modifier = Modifier
@@ -68,7 +80,17 @@ fun HomeScreen(navController: NavController) {
             .background(MaterialTheme.colorScheme.background)
             .verticalScroll(rememberScrollState())
     ) {
-        HeroSection(isOnline = isOnline)
+        HeroSection(isOnline = isOnline, query = query, onQueryChange = { query = it })
+
+        if (query.isNotBlank()) {
+            SearchResults(
+                query = query,
+                navController = navController,
+                onSuggestion = { query = it },
+            )
+            Spacer(Modifier.height(24.dp))
+            return@Column
+        }
 
         FiltersSection(
             selectedArea = selectedArea,
@@ -90,7 +112,8 @@ fun HomeScreen(navController: NavController) {
 }
 
 @Composable
-private fun HeroSection(isOnline: Boolean) {
+private fun HeroSection(isOnline: Boolean, query: String, onQueryChange: (String) -> Unit) {
+    val focusManager = LocalFocusManager.current
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -142,7 +165,61 @@ private fun HeroSection(isOnline: Boolean) {
         ) {
             Icon(Icons.Outlined.Search, contentDescription = null, tint = TextMuted, modifier = Modifier.size(20.dp))
             Spacer(Modifier.width(12.dp))
-            Text("What service do you need?", color = Color(0xFF94A3B8), fontSize = 15.sp, fontWeight = FontWeight.Medium)
+            BasicTextField(
+                value = query,
+                onValueChange = onQueryChange,
+                singleLine = true,
+                textStyle = TextStyle(color = TextDark, fontSize = 15.sp, fontWeight = FontWeight.Medium),
+                cursorBrush = SolidColor(Cyan),
+                keyboardOptions = KeyboardOptions(
+                    imeAction = ImeAction.Search,
+                    capitalization = KeyboardCapitalization.None,
+                ),
+                keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() }),
+                modifier = Modifier.weight(1f),
+                decorationBox = { inner ->
+                    Box {
+                        if (query.isEmpty()) {
+                            Text(
+                                "What service do you need?",
+                                color = Color(0xFF94A3B8),
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Medium,
+                            )
+                        }
+                        inner()
+                    }
+                },
+            )
+            if (query.isNotEmpty()) {
+                Icon(
+                    Icons.Outlined.Close,
+                    contentDescription = "Clear search",
+                    tint = TextMuted,
+                    modifier = Modifier
+                        .size(20.dp)
+                        .clickable {
+                            onQueryChange("")
+                            focusManager.clearFocus()
+                        },
+                )
+            }
+        }
+        if (query.isEmpty()) {
+            Spacer(Modifier.height(12.dp))
+            LazyRow {
+                items(listOf("Massage", "Plumber", "Taxi", "Nails", "Mechanic", "Cleaning")) { s ->
+                    Box(
+                        modifier = Modifier
+                            .padding(end = 8.dp)
+                            .background(Color.White.copy(alpha = 0.18f), RoundedCornerShape(16.dp))
+                            .clickable { onQueryChange(s) }
+                            .padding(horizontal = 12.dp, vertical = 6.dp)
+                    ) {
+                        Text(s, color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                    }
+                }
+            }
         }
     }
 }
@@ -330,6 +407,107 @@ private fun TopRatedSection(navController: NavController) {
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun SearchResults(
+    query: String,
+    navController: NavController,
+    onSuggestion: (String) -> Unit,
+) {
+    val categories = MockData.searchCategories(query)
+    val providers = MockData.searchProviders(query)
+
+    Column(modifier = Modifier.padding(16.dp)) {
+        if (categories.isEmpty() && providers.isEmpty()) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 40.dp)
+            ) {
+                Icon(Icons.Outlined.SearchOff, contentDescription = null, tint = TextMuted, modifier = Modifier.size(40.dp))
+                Spacer(Modifier.height(12.dp))
+                Text("No results for \"$query\"", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = TextDark)
+                Spacer(Modifier.height(4.dp))
+                Text("Try a simpler word, like:", fontSize = 14.sp, color = TextMuted)
+                Spacer(Modifier.height(12.dp))
+                Row {
+                    listOf("Massage", "Taxi", "Cleaning").forEach { s ->
+                        FilterChip(label = s, selected = false, activeColor = Cyan) { onSuggestion(s) }
+                    }
+                }
+            }
+            return@Column
+        }
+
+        if (categories.isNotEmpty()) {
+            Text("Services", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = TextDark)
+            Spacer(Modifier.height(10.dp))
+            categories.forEach { category ->
+                ResultRow(
+                    iconKey = category.icon,
+                    color = category.color,
+                    bgLight = category.bgLight,
+                    title = category.name,
+                    subtitle = category.description,
+                ) { navController.navigate(Routes.category(category.id)) }
+            }
+            Spacer(Modifier.height(12.dp))
+        }
+
+        if (providers.isNotEmpty()) {
+            Text("Providers", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = TextDark)
+            Spacer(Modifier.height(10.dp))
+            providers.forEach { provider ->
+                val category = MockData.categoryById(provider.category)
+                ResultRow(
+                    iconKey = category?.icon ?: "home",
+                    color = category?.color ?: "#0891B2",
+                    bgLight = category?.bgLight ?: "#E0F2FE",
+                    title = provider.name,
+                    subtitle = "${category?.name.orEmpty()} • ★ ${provider.rating} • ${provider.priceRange}",
+                ) { navController.navigate(Routes.provider(provider.id)) }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ResultRow(
+    iconKey: String,
+    color: String,
+    bgLight: String,
+    title: String,
+    subtitle: String,
+    onClick: () -> Unit,
+) {
+    Card(
+        onClick = onClick,
+        shape = RoundedCornerShape(14.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFF1F5F9)),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = 8.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(12.dp)) {
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .size(40.dp)
+                    .background(parseHex(bgLight), RoundedCornerShape(10.dp))
+            ) {
+                Icon(iconFor(iconKey), contentDescription = null, tint = parseHex(color), modifier = Modifier.size(20.dp))
+            }
+            Spacer(Modifier.width(12.dp))
+            Column(Modifier.weight(1f)) {
+                Text(title, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = TextDark, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(subtitle, fontSize = 12.sp, color = TextMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
+            Icon(Icons.AutoMirrored.Outlined.KeyboardArrowRight, contentDescription = null, tint = TextMuted)
         }
     }
 }
